@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener v2.0 - Advanced Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for analytics visualization (v2.0) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation Header (v2.0) -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🔗 URL Shortener v2.0</h1>
+                <div class="auth-controls">
+                    <span id="userInfo" style="display: none;">
+                        👤 <span id="username"></span>
+                        <button id="logoutBtn" class="btn btn-small">Logout</button>
+                    </span>
+                    <div id="authButtons" class="auth-buttons">
+                        <button id="loginBtn" class="btn btn-small">Login</button>
+                        <button id="registerBtn" class="btn btn-small btn-primary">Sign Up</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="mainContent" class="main-content">
+            <!-- Auth Modal (Login/Register) (v2.0) -->
+            <div id="authModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <!-- Login Form -->
+                    <div id="loginForm" class="auth-form" style="display: none;">
+                        <h2>Login</h2>
+                        <form id="loginFormElement">
+                            <div class="form-group">
+                                <label for="loginEmail">Email</label>
+                                <input type="email" id="loginEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="loginPassword">Password</label>
+                                <input type="password" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <p class="form-footer">
+                                Don't have an account?
+                                <a href="#" id="switchToRegister" class="link">Sign up here</a>
+                            </p>
+                        </form>
+                    </div>
+
+                    <!-- Register Form -->
+                    <div id="registerForm" class="auth-form" style="display: none;">
+                        <h2>Create Account</h2>
+                        <form id="registerFormElement">
+                            <div class="form-group">
+                                <label for="registerUsername">Username</label>
+                                <input type="text" id="registerUsername" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="registerEmail">Email</label>
+                                <input type="email" id="registerEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="registerPassword">Password</label>
+                                <input type="password" id="registerPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                            <p class="form-footer">
+                                Already have an account?
+                                <a href="#" id="switchToLogin" class="link">Login here</a>
+                            </p>
+                        </form>
+                    </div>
+
+                    <button class="modal-close" onclick="closeAuthModal()">×</button>
+                </div>
+            </div>
+
+            <!-- Dashboard (v2.0) -->
+            <section id="dashboardSection" class="dashboard-section" style="display: none;">
+                <div class="dashboard-container">
+                    <h2>📊 Your Dashboard</h2>
+                    
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Links</h3>
+                            <p id="totalLinks" class="stat-value">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Clicks</h3>
+                            <p id="totalClicks" class="stat-value">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Avg Clicks/Link</h3>
+                            <p id="avgClicks" class="stat-value">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Top Link Clicks</h3>
+                            <p id="topLinkClicks" class="stat-value">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Your Links List -->
+                    <div class="links-section">
+                        <h3>Your Links</h3>
+                        <div id="userLinksList" class="links-list">
+                            <!-- Links will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Create URL Section -->
+            <section id="createSection" class="create-section">
+                <div class="form-container">
+                    <h2>✨ Create Short Link</h2>
+                    
+                    <form id="shortenForm">
+                        <div class="form-group">
+                            <label for="originalUrl">Enter Long URL</label>
+                            <input 
+                                type="url" 
+                                id="originalUrl" 
+                                placeholder="https://example.com/very/long/path" 
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="linkTitle">Link Title (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="linkTitle" 
+                                placeholder="e.g., My Awesome Article"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="visibility">Visibility (v2.0)</label>
+                            <select id="visibility">
+                                <option value="public">Public - Anyone can see analytics</option>
+                                <option value="analytics-only">Analytics Only - Limited access</option>
+                                <option value="private">Private - Only you see analytics</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Create Short Link</button>
+
+                        <div id="loadingState" class="loading-state" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Creating your short link...</p>
+                        </div>
+
+                        <div id="errorMessage" class="error-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section id="resultSection" class="result-section" style="display: none;">
+                <div class="result-container">
+                    <h2>🎉 Your Short Link is Ready!</h2>
+                    
+                    <div class="result-item">
+                        <label>Short URL</label>
+                        <div class="short-url-display">
+                            <input type="text" id="shortUrlInput" readonly class="url-input">
+                            <button type="button" id="copyBtn" class="btn btn-copy">📋 Copy</button>
+                        </div>
+                        <div id="copyMessage" class="copy-message" style="display: none;">✓ Copied!</div>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="result-item">
+                        <label>QR Code</label>
+                        <div id="qrCodeContainer" class="qr-container"></div>
+                        <button type="button" id="downloadQrBtn" class="btn btn-small">Download QR Code</button>
+                    </div>
+
+                    <!-- Analytics Chart (v2.0) -->
+                    <div class="result-item">
+                        <label>Real-time Analytics (v2.0)</label>
+                        <div class="analytics-charts">
+                            <div class="chart-container">
+                                <canvas id="hourlyChart"></canvas>
+                            </div>
+                            <div id="clicksInfo" class="clicks-info">
+                                <p>📈 <span id="realtimeClicks">0</span> clicks (real-time)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="viewAnalyticsBtn" class="btn btn-secondary">View Full Analytics</button>
+                    <button id="createAnotherBtn" class="btn btn-primary">Create Another</button>
+                </div>
+            </section>
+
+            <!-- Analytics View (v2.0) -->
+            <section id="analyticsSection" class="analytics-section" style="display: none;">
+                <div class="analytics-container">
+                    <h2>📊 Analytics for <span id="analyticsCode"></span></h2>
+                    <button id="backToDashboardBtn" class="btn btn-small">← Back to Dashboard</button>
+                    
+                    <!-- Geographic Heatmap (v2.0) -->
+                    <div class="analytics-item">
+                        <h3>🌍 Geographic Distribution (v2.0)</h3>
+                        <div id="heatmapContainer" class="heatmap-container"></div>
+                    </div>
+
+                    <!-- Device Breakdown -->
+                    <div class="analytics-item">
+                        <h3>📱 Devices</h3>
+                        <canvas id="deviceChart"></canvas>
+                    </div>
+
+                    <!-- Browser Breakdown -->
+                    <div class="analytics-item">
+                        <h3>🌐 Browsers</h3>
+                        <canvas id="browserChart"></canvas>
+                    </div>
+
+                    <!-- Hourly Clicks -->
+                    <div class="analytics-item">
+                        <h3>⏰ Clicks Over Time</h3>
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Links (v1.0 compatibility) -->
+            <section class="recent-section">
+                <h2>📝 Recent Links (Local Storage)</h2>
+                <div id="recentLinksList" class="links-grid">
+                    <p class="placeholder">No recent links yet</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>URL Shortener v2.0 | JWT Authentication | Advanced Analytics | GraphQL API</p>
+            <p>📖 <a href="/api/docs" target="_blank">API Documentation</a> | 
+               🚀 <a href="/graphql" target="_blank">GraphQL Playground</a></p>
+        </footer>
+    </div>
+
+    <script src="app-v2.js"></script>
+</body>
+</html>

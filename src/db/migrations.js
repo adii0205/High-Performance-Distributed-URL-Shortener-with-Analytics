@@ -4,42 +4,46 @@ async function runMigrations() {
   console.log('Running database migrations...');
 
   try {
-    // Create users table
+    // Create users table (v2.0 with JWT authentication)
     await query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         email VARCHAR(255) UNIQUE NOT NULL,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✓ Created users table');
+    console.log('✓ Created/Updated users table');
 
     // Create URLs table
     await query(`
       CREATE TABLE IF NOT EXISTS urls (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
         short_code VARCHAR(10) UNIQUE NOT NULL,
         original_url TEXT NOT NULL,
         custom_alias VARCHAR(255) UNIQUE,
         title VARCHAR(255),
         description TEXT,
         custom_domain VARCHAR(255),
+        click_count INTEGER DEFAULT 0,
         expires_at TIMESTAMP,
         is_active BOOLEAN DEFAULT TRUE,
+        visibility VARCHAR(50) DEFAULT 'public', -- public, private, analytics-only
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✓ Created urls table');
+    console.log('✓ Created/Updated urls table');
 
     // Create analytics table
     await query(`
       CREATE TABLE IF NOT EXISTS analytics (
         id BIGSERIAL PRIMARY KEY,
-        short_code_id INTEGER REFERENCES urls(id) ON DELETE CASCADE,
+        url_id UUID REFERENCES urls(id) ON DELETE CASCADE,
         short_code VARCHAR(10),
         ip_address INET,
         country_code VARCHAR(2),
@@ -57,13 +61,13 @@ async function runMigrations() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✓ Created analytics table');
+    console.log('✓ Created/Updated analytics table');
 
     // Create analytics summary table (for aggregated metrics)
     await query(`
       CREATE TABLE IF NOT EXISTS analytics_summary (
-        id SERIAL PRIMARY KEY,
-        short_code_id INTEGER REFERENCES urls(id) ON DELETE CASCADE,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        url_id UUID REFERENCES urls(id) ON DELETE CASCADE,
         short_code VARCHAR(10),
         click_count BIGINT DEFAULT 0,
         unique_ips BIGINT DEFAULT 0,
@@ -71,7 +75,7 @@ async function runMigrations() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✓ Created analytics_summary table');
+    console.log('✓ Created/Updated analytics_summary table');
 
     // Create rate_limit_logs table
     await query(`
@@ -98,6 +102,8 @@ async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_urls_user_id ON urls(user_id);
       CREATE INDEX IF NOT EXISTS idx_urls_user_created 
         ON urls(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_urls_user_active 
+        ON urls(user_id, is_active) WHERE is_active = TRUE;
     `);
 
     // Custom alias lookup
@@ -181,6 +187,9 @@ async function runMigrations() {
       
       CREATE INDEX IF NOT EXISTS idx_analytics_summary_clicks 
         ON analytics_summary(click_count DESC);
+      
+      CREATE INDEX IF NOT EXISTS idx_analytics_summary_url_id 
+        ON analytics_summary(url_id);
     `);
 
     // Rate limit indexes
