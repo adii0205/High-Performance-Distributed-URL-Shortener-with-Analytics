@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - Shorten Your Links</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🔗 URL Shortener</h1>
+                <p class="subtitle">Make long URLs short, beautiful, and shareable</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Create URL Section -->
+            <section class="create-section">
+                <div class="form-container">
+                    <h2>Create Short Link</h2>
+                    
+                    <form id="shortenForm">
+                        <!-- Original URL Input -->
+                        <div class="form-group">
+                            <label for="originalUrl">Enter Long URL</label>
+                            <input 
+                                type="url" 
+                                id="originalUrl" 
+                                placeholder="https://example.com/very/long/path/to/page"
+                                required
+                            >
+                        </div>
+
+                        <!-- Custom Alias Input -->
+                        <div class="form-group">
+                            <label for="customAlias">Custom Alias (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="customAlias" 
+                                placeholder="e.g., my-link (3+ letters/numbers only)"
+                            >
+                        </div>
+
+                        <!-- Expiry Input -->
+                        <div class="form-group">
+                            <label for="expireDays">Expiration (Days)</label>
+                            <input 
+                                type="number" 
+                                id="expireDays" 
+                                min="1" 
+                                max="365" 
+                                value="90"
+                                placeholder="Default: 90 days"
+                            >
+                            <small>Leave empty or set to 0 for no expiration</small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-icon">✨</span>
+                            Create Short Link
+                        </button>
+
+                        <!-- Loading State -->
+                        <div id="loadingState" class="loading-state" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Creating your short link...</p>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div id="errorMessage" class="error-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Result Section -->
+            <section id="resultSection" class="result-section" style="display: none;">
+                <div class="result-container">
+                    <h2>Your Short Link is Ready!</h2>
+                    
+                    <!-- Short URL Display -->
+                    <div class="result-item">
+                        <label>Short URL</label>
+                        <div class="short-url-display">
+                            <input type="text" id="shortUrlInput" readonly class="url-input">
+                            <button type="button" id="copyBtn" class="btn btn-copy">
+                                📋 Copy
+                            </button>
+                        </div>
+                        <div id="copyMessage" class="copy-message" style="display: none;">✓ Copied!</div>
+                    </div>
+
+                    <!-- Original URL Display -->
+                    <div class="result-item">
+                        <label>Original URL</label>
+                        <a id="originalUrlDisplay" href="#" target="_blank" class="link-display">
+                            View Original Link
+                        </a>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="result-item">
+                        <label>QR Code</label>
+                        <div class="qr-container">
+                            <img id="qrCode" src="" alt="QR Code" class="qr-code">
+                            <button type="button" id="downloadQrBtn" class="btn btn-secondary">
+                                ⬇️ Download QR Code
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Link Preview -->
+                    <div id="previewSection" class="result-item preview-item" style="display: none;">
+                        <label>Link Preview</label>
+                        <div class="preview-card">
+                            <div id="previewImage" class="preview-image" style="display: none;">
+                                <img id="previewImg" src="" alt="Preview">
+                            </div>
+                            <div class="preview-text">
+                                <h3 id="previewTitle"></h3>
+                                <p id="previewDesc"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="result-item stats-item">
+                        <label>Link Stats</label>
+                        <div class="stats-grid">
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Clicks</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="createdDate">Just now</div>
+                                <div class="stat-label">Created</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="expiryDate">90 days</div>
+                                <div class="stat-label">Expires In</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button type="button" id="viewAnalyticsBtn" class="btn btn-secondary">
+                            📊 View Analytics
+                        </button>
+                        <button type="button" id="resetFormBtn" class="btn btn-outline">
+                            ➕ Create Another
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Modal -->
+            <div id="analyticsModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <button type="button" class="modal-close">&times;</button>
+                    <h2>Link Analytics</h2>
+                    
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Total Clicks</h3>
+                            <p class="analytics-value" id="totalClicks">0</p>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Unique Visitors</h3>
+                            <p class="analytics-value" id="uniqueVisitors">0</p>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Last Click</h3>
+                            <p class="analytics-value" id="lastClick">Never</p>
+                        </div>
+                    </div>
+
+                    <div class="analytics-section">
+                        <h3>By Country</h3>
+                        <div id="countryStats" class="stats-list"></div>
+                    </div>
+
+                    <div class="analytics-section">
+                        <h3>By Device</h3>
+                        <div id="deviceStats" class="stats-list"></div>
+                    </div>
+
+                    <div class="analytics-section">
+                        <h3>By Browser</h3>
+                        <div id="browserStats" class="stats-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent URLs Section -->
+            <section class="recent-section">
+                <h2>📋 Your Recent Links</h2>
+                <div id="recentUrlsList" class="urls-grid">
+                    <p class="empty-state">No links created yet. Create one above!</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 URL Shortener | Built with ❤️ | <a href="#" id="githubLink" target="_blank">View on GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
