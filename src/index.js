@@ -9,6 +9,9 @@ const swaggerUi = require('swagger-ui-express');
 const { ApolloServer } = require('apollo-server-express');
 require('dotenv').config();
 
+// Prometheus metrics
+const { prometheusMetrics, metricsEndpoint } = require('./middleware/metrics');
+
 const { initDatabase } = require('./db/pool');
 const { initRedis } = require('./cache/redisClient');
 
@@ -37,6 +40,12 @@ app.use(cors());
 
 // Compression middleware (v2.0)
 app.use(compressionMiddleware);
+
+// Prometheus metrics middleware (before other middleware)
+app.use(prometheusMetrics);
+
+// Metrics endpoint
+app.get('/metrics', metricsEndpoint);
 
 // Parsing middleware
 app.use(express.json());
