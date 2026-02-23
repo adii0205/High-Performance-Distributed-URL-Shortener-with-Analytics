@@ -3,43 +3,16 @@
  */
 
 const setCachingHeaders = (req, res, next) => {
-  const originalEnd = res.end;
-  const originalJson = res.json;
-
-  // For API responses, set appropriate cache-control headers
-  res.json = function(data) {
-    // Cache API responses for 5 minutes for GET requests
+  // Set default cache control headers for API responses
+  if (req.path.includes('/api/') || req.path.includes('/graphql')) {
     if (req.method === 'GET') {
-      res.set('Cache-Control', 'public, max-age=300'); // 5 minutes
-      res.set('ETag', `"${Buffer.from(JSON.stringify(data)).toString('base64')}")`);
+      res.set('Cache-Control', 'public, max-age=300'); // 5 minutes for GET
     } else {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
     }
-
-    return originalJson.call(this, data);
-  };
-
-  // For static files, set longer cache
-  res.on('finish', function() {
-    if (res.statusCode < 400) {
-      const contentType = res.get('content-type') || '';
-
-      // Images - cache for 1 year
-      if (contentType.includes('image')) {
-        res.set('Cache-Control', 'public, max-age=31536000, immutable');
-      }
-      // CSS/JS - cache for 1 year
-      else if (contentType.includes('javascript') || contentType.includes('css')) {
-        res.set('Cache-Control', 'public, max-age=31536000, immutable');
-      }
-      // HTML - don't cache or cache for short period
-      else if (contentType.includes('html')) {
-        res.set('Cache-Control', 'public, max-age=3600'); // 1 hour
-      }
-    }
-  });
+  }
 
   next();
 };

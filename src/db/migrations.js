@@ -181,16 +181,30 @@ async function runMigrations() {
     `);
 
     // Analytics summary indexes
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_analytics_summary_short_code 
-        ON analytics_summary(short_code);
+    try {
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_analytics_summary_short_code 
+          ON analytics_summary(short_code);
+        
+        CREATE INDEX IF NOT EXISTS idx_analytics_summary_clicks 
+          ON analytics_summary(click_count DESC);
+      `);
       
-      CREATE INDEX IF NOT EXISTS idx_analytics_summary_clicks 
-        ON analytics_summary(click_count DESC);
+      // Try to add url_id column if it doesn't exist
+      try {
+        await query(`ALTER TABLE analytics_summary ADD COLUMN url_id UUID REFERENCES urls(id) ON DELETE CASCADE;`);
+      } catch (e) {
+        // Column may already exist, ignore
+      }
       
-      CREATE INDEX IF NOT EXISTS idx_analytics_summary_url_id 
-        ON analytics_summary(url_id);
-    `);
+      // Now create the index
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_analytics_summary_url_id 
+          ON analytics_summary(url_id);
+      `);
+    } catch (e) {
+      console.warn('⚠️  Could not create all analytics_summary indexes:', e.message);
+    }
 
     // Rate limit indexes
     await query(`
